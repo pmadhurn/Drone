@@ -2,10 +2,10 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_mac.h"  // Add this for MAC address macros
+#include "esp_mac.h"
 #include "lwip/sockets.h"
 #include "config.h"
-#include "flight_controller.h"  // Add this
+#include "flight_controller.h"
 #include <string.h>
 
 static const char *TAG = "WIFI_CONTROL";
@@ -22,6 +22,17 @@ typedef struct {
     float roll;
     int armed;
 } control_packet_t;
+
+typedef struct {
+    float height;
+    float pitch;
+    float roll;
+    float yaw;
+    float battery_voltage;
+    float gyro_height;
+    uint8_t armed;
+    uint8_t reserved[3]; // Padding for 32-byte alignment
+} telemetry_packet_t;
 
 static control_packet_t last_control = {0};
 
@@ -109,12 +120,27 @@ void wifi_control_init(void) {
 }
 
 void wifi_send_telemetry(float height, float pitch, float roll, float yaw) {
+    // Call the extended version with default values
+    wifi_send_telemetry_extended(height, pitch, roll, yaw, 0, 0, false);
+}
+
+void wifi_send_telemetry_extended(float height, float pitch, float roll, float yaw, 
+                                  float battery, float gyro_height, bool armed) {
     if (!client_connected) return;
     
-    float telemetry[4] = {height, pitch, roll, yaw};
+    telemetry_packet_t telemetry = {
+        .height = height,
+        .pitch = pitch,
+        .roll = roll,
+        .yaw = yaw,
+        .battery_voltage = battery,
+        .gyro_height = gyro_height,
+        .armed = armed ? 1 : 0,
+        .reserved = {0}
+    };
     
     client_addr.sin_port = htons(TELEMETRY_PORT);
-    sendto(telemetry_socket, telemetry, sizeof(telemetry), 0,
+    sendto(telemetry_socket, &telemetry, sizeof(telemetry), 0,
            (struct sockaddr *)&client_addr, sizeof(client_addr));
 }
 
