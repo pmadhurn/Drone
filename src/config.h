@@ -34,7 +34,7 @@
 
 // Flight Parameters
 #define MIN_THROTTLE 1000
-#define MAX_THROTTLE 2000
+#define MAX_THROTTLE 1500
 #define ARM_THROTTLE 1100
 #define FLIGHT_LOOP_FREQ 250  // Hz
 #define MAX_ANGLE 30.0f       // degrees
